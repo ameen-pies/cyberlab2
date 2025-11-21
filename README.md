@@ -195,9 +195,4 @@ cybersec_platform/
 
 MIT
 
-## Author
-
-Built with ❤️ for cybersecurity education
 =======
-# cyberlab
->>>>>>> 43d8eb321e1049142af961a0186f1ab462924047
