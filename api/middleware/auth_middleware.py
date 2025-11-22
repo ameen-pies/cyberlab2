@@ -29,7 +29,7 @@ async def get_current_user(
             detail="Invalid token payload"
         )
     
-    users_collection = db[settings.DATABASE_NAME]["users"]
+    users_collection = db["users"]
     user = await users_collection.find_one({"email": email})
     
     if not user:

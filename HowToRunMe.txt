@@ -1,0 +1,9 @@
+from the root path (/cyberlab) run: "python -m uvicorn api.main:app --reload --host 0.0.0.0 --port 8000"
+or "uvicorn api.main:app --reload --host 0.0.0.0 --port 8000" to run the backend
+
+then to run the front: "python -m http.server 8080" the check "localhost 8080" in ur browser 
+or download liveserver for extra fancy
+
+✅ Admin account
+📧 Email: admin@cybersec.com
+🔑 Password: Admin123!

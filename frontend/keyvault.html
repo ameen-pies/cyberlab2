@@ -1,0 +1,323 @@
+[file name]: keyvault.html
+[file content begin]
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KeyVault - CyberLab Platform</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="dashboard-body">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <svg width="40" height="40" viewBox="0 0 50 50" fill="none">
+                <path d="M25 5L5 15V25C5 35 15 43 25 45C35 43 45 35 45 25V15L25 5Z" stroke="#6366f1" stroke-width="2" fill="none"/>
+                <path d="M25 15L15 20V27C15 32 20 36 25 38C30 36 35 32 35 27V20L25 15Z" fill="#6366f1"/>
+            </svg>
+            <h2>CyberLab</h2>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="nav-item" id="navOverview">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+                <span>Overview</span>
+            </a>
+            
+            <a href="dashboard.html#encryption" class="nav-item" id="navEncryption">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+                <span>🔐 Encryption Service</span>
+            </a>
+            
+            <a href="keyvault.html" class="nav-item active" id="navKeyvault">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
+                </svg>
+                <span>🔑 KeyVault</span>
+            </a>
+            
+            <a href="password-checker.html" class="nav-item" id="navPassword">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M12 6v6l4 2"></path>
+                </svg>
+                <span>🔒 Password Checker</span>
+            </a>
+            
+            <a href="secret-scanner.html" class="nav-item" id="navScanner">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                <span>🕵️ Secret Scanner</span>
+            </a>
+            
+            <a href="admin.html" class="nav-item" id="navAdmin" style="display: none;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                <span>👥 User Management</span>
+            </a>
+            
+            <a href="dashboard.html#settings" class="nav-item" id="navSettings">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
+                </svg>
+                <span>Settings</span>
+            </a>
+        </nav>
+        
+        <div class="sidebar-footer">
+            <button onclick="window.location.href='dashboard.html'" class="logout-btn" style="background: #e0e7ff; color: #4f46e5;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M15 18l-6-6 6-6"/>
+                </svg>
+                <span>Back to Dashboard</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="dashboard-header">
+            <div>
+                <h1>🔑 KeyVault Management</h1>
+                <p class="header-subtitle">Manage cryptographic keys and certificates</p>
+            </div>
+            <div class="user-info">
+                <div class="user-avatar" id="userAvatar">U</div>
+                <div>
+                    <span id="userEmailHeader">Loading...</span><br>
+                    <small id="userRoleHeader">...</small>
+                </div>
+            </div>
+        </header>
+
+        <!-- Statistics Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon" style="background: #dbeafe;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2">
+                        <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <h3>Total Keys</h3>
+                    <p class="stat-value" id="totalKeys">0</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon" style="background: #dcfce7;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <h3>Certificates</h3>
+                    <p class="stat-value" id="totalCerts">0</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon" style="background: #fef3c7;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M12 6v6l4 2"></path>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <h3>Expiring Soon</h3>
+                    <p class="stat-value" id="expiringSoon">0</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="encryption-tabs">
+            <button class="tab-btn active" onclick="switchTab('keys')">🔑 Keys</button>
+            <button class="tab-btn" onclick="switchTab('certificates')">📜 Certificates</button>
+        </div>
+
+        <!-- Keys Tab -->
+        <div id="keysTab" class="tab-content active">
+            <div class="form-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3>Generate New Key</h3>
+                </div>
+                
+                <form onsubmit="handleGenerateKey(event)">
+                    <div class="form-group">
+                        <label>Key Name</label>
+                        <input type="text" id="keyName" placeholder="my-encryption-key" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Key Type</label>
+                        <select id="keyType">
+                            <option value="RSA">RSA (Asymmetric)</option>
+                            <option value="AES">AES (Symmetric)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Key Size</label>
+                        <select id="keySize">
+                            <option value="2048">2048 bits</option>
+                            <option value="3072">3072 bits</option>
+                            <option value="4096">4096 bits</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <span class="btn-text">Generate Key</span>
+                        <span class="btn-loader" style="display: none;"></span>
+                    </button>
+                </form>
+            </div>
+
+            <div class="form-card">
+                <h3>Your Keys</h3>
+                <div id="keysList"></div>
+            </div>
+        </div>
+
+        <!-- Certificates Tab -->
+        <div id="certificatesTab" class="tab-content">
+            <div class="form-card">
+                <h3>Generate New Certificate</h3>
+                
+                <form onsubmit="handleGenerateCertificate(event)">
+                    <div class="form-group">
+                        <label>Certificate Name</label>
+                        <input type="text" id="certName" placeholder="my-certificate" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Common Name (CN)</label>
+                        <input type="text" id="commonName" placeholder="example.com" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Validity (Days)</label>
+                        <input type="number" id="validityDays" value="365" min="1" max="3650">
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <span class="btn-text">Generate Certificate</span>
+                        <span class="btn-loader" style="display: none;"></span>
+                    </button>
+                </form>
+            </div>
+
+            <div class="form-card">
+                <h3>Your Certificates</h3>
+                <div id="certsList"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Key Details Modal -->
+    <div id="keyModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Key Details</h3>
+                <button onclick="closeKeyModal()" class="modal-close">&times;</button>
+            </div>
+            <div id="keyModalContent" style="padding: 24px;"></div>
+        </div>
+    </div>
+
+    <!-- Email Modal -->
+    <div id="emailModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3 id="emailModalTitle">Send via Email</h3>
+                <button onclick="closeEmailModal()" class="modal-close">&times;</button>
+            </div>
+            <div style="padding: 24px;">
+                <form onsubmit="handleSendEmail(event)">
+                    <div class="form-group">
+                        <label>Recipient Email</label>
+                        <input type="email" id="emailRecipient" placeholder="recipient@example.com" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Message (Optional)</label>
+                        <textarea id="emailMessage" placeholder="Add a personal message..." rows="3" style="width: 100%; padding: 10px; border: 1px solid #e5e7eb; border-radius: 6px; resize: vertical;"></textarea>
+                    </div>
+                    
+                    <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="emailIncludePrivate" style="width: 18px; height: 18px;">
+                        <label for="emailIncludePrivate" style="margin: 0; cursor: pointer;">
+                            Include Private Key 
+                            <span style="color: #dc2626; font-size: 12px;">⚠️ Security Risk</span>
+                        </label>
+                    </div>
+                    
+                    <div style="background: #fef3c7; padding: 12px; border-radius: 8px; margin-bottom: 20px;">
+                        <p style="margin: 0; font-size: 13px; color: #92400e;">
+                            <strong>⚠️ Warning:</strong> Sending private keys via email is not recommended for production use. Use secure key exchange methods when possible.
+                        </p>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px;">
+                        <button type="button" onclick="closeEmailModal()" class="btn btn-secondary" style="flex: 1;">
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary" style="flex: 1;">
+                            <span class="btn-text">📧 Send Email</span>
+                            <span class="btn-loader" style="display: none;"></span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script src="config.js"></script>
+    <script>
+        // Load user info on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Check authentication
+            if (!Storage.getToken()) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Load user info
+            const user = Storage.getUser();
+            if (user) {
+                document.getElementById('userEmailHeader').textContent = user.email;
+                document.getElementById('userRoleHeader').textContent = user.role;
+                document.getElementById('userAvatar').textContent = user.email.charAt(0).toUpperCase();
+                
+                // Show admin nav if user is admin
+                if (user.role === 'admin' || user.role === 'co_admin') {
+                    document.getElementById('navAdmin').style.display = 'flex';
+                }
+            }
+
+            await loadStatistics();
+            await loadKeys();
+            await loadCertificates();
+        });
+    </script>
+    <script src="keyvault.js"></script>
+</body>
+</html>
+[file content end]

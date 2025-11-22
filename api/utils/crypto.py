@@ -21,7 +21,7 @@ def generate_key_from_password(password: str, salt: bytes = None) -> tuple[bytes
     if salt is None:
         salt = secrets.token_bytes(16)
     
-    kdf = PBKDF2(
+    kdf = PBKDF2HMAC(  # ✅ FIXED: Changed from PBKDF2 to PBKDF2HMAC
         algorithm=hashes.SHA256(),
         length=32,
         salt=salt,
