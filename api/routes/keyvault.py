@@ -199,7 +199,7 @@ async def rotate_key(
     current_user: dict = Depends(get_current_user)
 ):
     """Rotate a key (create new version)"""
-    check_keyvault_permission(current_user)
+    check_permission(current_user, "keyvault_download_keys")
     
     logger.info(f"🔄 Key rotation request for {key_id} by {current_user['email']}")
     
@@ -225,7 +225,7 @@ async def delete_key(
     current_user: dict = Depends(get_current_user)
 ):
     """Delete a key (soft delete)"""
-    check_keyvault_permission(current_user)
+    check_permission(current_user, "keyvault_download_keys")
     
     db = req.state.db
     deleted = await KeyVaultService.delete_key(db, current_user['email'], key_id)
@@ -246,7 +246,7 @@ async def download_key(
     current_user: dict = Depends(get_current_user)
 ):
     """Download key as PEM file"""
-    check_keyvault_permission(current_user)
+    check_permission(current_user, "keyvault_download_keys")
     
     db = req.state.db
     keys_collection = db["keys"]
@@ -297,7 +297,7 @@ async def send_key_via_email(
     current_user: dict = Depends(get_current_user)
 ):
     """Send key via email"""
-    check_keyvault_permission(current_user)
+    check_permission(current_user, "keyvault_download_keys")
     
     db = req.state.db
     keys_collection = db["keys"]
@@ -397,7 +397,7 @@ async def generate_certificate(
     current_user: dict = Depends(get_current_user)
 ):
     """Generate a self-signed certificate"""
-    check_keyvault_permission(current_user)
+    check_permission(current_user, "keyvault_download_keys")
     
     logger.info(f"📜 Certificate generation request from {current_user['email']}")
     
@@ -471,7 +471,7 @@ async def download_certificate(
     current_user: dict = Depends(get_current_user)
 ):
     """Download certificate as PEM file"""
-    check_keyvault_permission(current_user)
+    check_permission(current_user, "keyvault_download_keys")
     
     db = req.state.db
     certs_collection = db["certificates"]
@@ -513,7 +513,7 @@ async def send_certificate_via_email(
     current_user: dict = Depends(get_current_user)
 ):
     """Send certificate via email"""
-    check_keyvault_permission(current_user)
+    check_permission(current_user, "keyvault_download_keys")
     
     db = req.state.db
     certs_collection = db["certificates"]

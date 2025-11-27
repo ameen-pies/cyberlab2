@@ -1,5 +1,4 @@
-[file name]: keyvault.html
-[file content begin]
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -290,34 +289,33 @@
     </div>
     
     <script src="config.js"></script>
-    <script>
-        // Load user info on page load
-        document.addEventListener('DOMContentLoaded', async () => {
-            // Check authentication
-            if (!Storage.getToken()) {
-                window.location.href = 'index.html';
-                return;
-            }
+<script src="keyvault.js"></script>
+<script>
+    // Load user info on page load
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Check authentication
+        if (!Storage.getToken()) {
+            window.location.href = 'index.html';
+            return;
+        }
 
-            // Load user info
-            const user = Storage.getUser();
-            if (user) {
-                document.getElementById('userEmailHeader').textContent = user.email;
-                document.getElementById('userRoleHeader').textContent = user.role;
-                document.getElementById('userAvatar').textContent = user.email.charAt(0).toUpperCase();
-                
-                // Show admin nav if user is admin
-                if (user.role === 'admin' || user.role === 'co_admin') {
-                    document.getElementById('navAdmin').style.display = 'flex';
-                }
+        // Load user info
+        const user = Storage.getUser();
+        if (user) {
+            document.getElementById('userEmailHeader').textContent = user.email;
+            document.getElementById('userRoleHeader').textContent = user.role;
+            document.getElementById('userAvatar').textContent = user.email.charAt(0).toUpperCase();
+            
+            // Show admin nav if user is admin
+            if (user.role === 'admin' || user.role === 'co_admin') {
+                document.getElementById('navAdmin').style.display = 'flex';
             }
+        }
 
-            await loadStatistics();
-            await loadKeys();
-            await loadCertificates();
-        });
-    </script>
-    <script src="keyvault.js"></script>
+        await loadStatistics();
+        await loadKeys();
+        await loadCertificates();
+    });
+</script>
 </body>
 </html>
-[file content end]

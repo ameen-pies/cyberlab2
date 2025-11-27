@@ -1,10 +1,11 @@
-// Check authentication
-if (!Storage.getToken()) {
-    window.location.href = 'index.html';
-}
-
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', async () => {
+    // Check authentication
+    if (!Storage.getToken()) {
+        window.location.href = 'index.html';
+        return;
+    }
+    
     await loadStatistics();
     await loadKeys();
     await loadCertificates();
@@ -215,10 +216,11 @@ async function viewKey(keyId) {
 }
 
 // Download key
+// Download key
 async function downloadKey(keyId, includePrivate = false) {
     try {
         const token = Storage.getToken();
-        const response = await fetch(`${API_BASE_URL}/keyvault/keys/${keyId}/download?include_private=${includePrivate}`, {
+        const response = await fetch(`${API_CONFIG.BASE_URL}/keyvault/keys/${keyId}/download?include_private=${includePrivate}`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -484,11 +486,12 @@ async function viewCertificate(certId) {
     }
 }
 
+
 // Download certificate (new API endpoint)
 async function downloadCertificate(certId, includePrivateKey = false) {
     try {
         const token = Storage.getToken();
-        const response = await fetch(`${API_BASE_URL}/keyvault/certificates/${certId}/download?include_private_key=${includePrivateKey}`, {
+        const response = await fetch(`${API_CONFIG.BASE_URL}/keyvault/certificates/${certId}/download?include_private_key=${includePrivateKey}`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`
