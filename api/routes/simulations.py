@@ -197,6 +197,7 @@ async def encrypt_file_in_transit(
     
     result["original_filename"] = file.filename
     result["file_size"] = len(file_content)
+    result["encrypted_size"] = len(result["encrypted_data"])
     result["content_type"] = file.content_type
     
     # Send email if recipient provided
@@ -212,6 +213,33 @@ async def encrypt_file_in_transit(
         )
         result["email_sent"] = sent
         result["recipient"] = recipient_email
+    
+    return result
+
+@router.post("/decrypt/file/in-transit")
+async def decrypt_file_in_transit(
+    request: Request,
+    file: UploadFile = File(...),
+    password: str = Form(...),
+    salt: str = Form(...),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Decrypt file encrypted for transit"""
+    current_user = await verify_token(request, credentials)
+    
+    # Read encrypted file content (it's base64 text inside)
+    file_content = await file.read()
+    encrypted_b64 = file_content.decode('utf-8')
+    
+    # Decrypt the data
+    result = EncryptionService.decrypt_in_transit(encrypted_b64, password, salt)
+    
+    if not result.get("success"):
+        raise HTTPException(status_code=500, detail=result.get("error"))
+    
+    # The decrypted data is base64 encoded original file
+    result["original_filename"] = file.filename.replace('.enc', '')
+    result["file_size"] = len(result["decrypted_data"])
     
     return result
 
@@ -237,6 +265,7 @@ async def encrypt_file_at_rest(
     
     result["original_filename"] = file.filename
     result["file_size"] = len(file_content)
+    result["encrypted_size"] = len(result["encrypted_data"])
     result["content_type"] = file.content_type
     
     # Send email if recipient provided
@@ -252,6 +281,32 @@ async def encrypt_file_at_rest(
         )
         result["email_sent"] = sent
         result["recipient"] = recipient_email
+    
+    return result
+
+@router.post("/decrypt/file/at-rest")
+async def decrypt_file_at_rest(
+    request: Request,
+    file: UploadFile = File(...),
+    key: str = Form(...),
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Decrypt file encrypted at rest"""
+    current_user = await verify_token(request, credentials)
+    
+    # Read encrypted file content (it's base64 text inside)
+    file_content = await file.read()
+    encrypted_b64 = file_content.decode('utf-8')
+    
+    # Decrypt the data
+    result = EncryptionService.decrypt_at_rest(encrypted_b64, key)
+    
+    if not result.get("success"):
+        raise HTTPException(status_code=500, detail=result.get("error"))
+    
+    # The decrypted data is base64 encoded original file
+    result["original_filename"] = file.filename.replace('.enc', '')
+    result["file_size"] = len(result["decrypted_data"])
     
     return result
 

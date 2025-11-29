@@ -135,7 +135,6 @@ function displayKeys(keys) {
                         <button onclick="viewKey('${key.key_id}')" class="btn btn-secondary btn-sm">View</button>
                         <button onclick="downloadKey('${key.key_id}', false)" class="btn btn-secondary btn-sm" title="Download Public Key">📥 Public</button>
                         <button onclick="downloadKey('${key.key_id}', true)" class="btn btn-secondary btn-sm" style="background: #fef3c7;" title="Download Private Key">📥 Private</button>
-                        <button onclick="openEmailModal('key', '${key.key_id}', '${key.key_name}')" class="btn btn-secondary btn-sm" title="Send via Email">📧</button>
                         <button onclick="rotateKey('${key.key_id}')" class="btn btn-secondary btn-sm">🔄 Rotate</button>
                         <button onclick="deleteKey('${key.key_id}')" class="btn btn-secondary btn-sm" style="background: #fee2e2; color: #dc2626;">🗑️</button>
                     </div>
@@ -215,7 +214,6 @@ async function viewKey(keyId) {
     }
 }
 
-// Download key
 // Download key
 async function downloadKey(keyId, includePrivate = false) {
     try {
@@ -405,7 +403,6 @@ function displayCertificates(certs) {
                         <button onclick="viewCertificate('${cert.cert_id}')" class="btn btn-secondary btn-sm">View</button>
                         <button onclick="downloadCertificate('${cert.cert_id}', false)" class="btn btn-secondary btn-sm" title="Download Certificate">📥 Cert</button>
                         <button onclick="downloadCertificate('${cert.cert_id}', true)" class="btn btn-secondary btn-sm" style="background: #fef3c7;" title="Download with Private Key">📥 Bundle</button>
-                        <button onclick="openEmailModal('cert', '${cert.cert_id}', '${cert.cert_name}')" class="btn btn-secondary btn-sm" title="Send via Email">📧</button>
                     </div>
                 </div>
             </div>
@@ -486,8 +483,7 @@ async function viewCertificate(certId) {
     }
 }
 
-
-// Download certificate (new API endpoint)
+// Download certificate
 async function downloadCertificate(certId, includePrivateKey = false) {
     try {
         const token = Storage.getToken();
@@ -526,71 +522,6 @@ async function downloadCertificate(certId, includePrivateKey = false) {
     }
 }
 
-// ============== EMAIL FUNCTIONS ==============
-
-let currentEmailTarget = { type: null, id: null, name: null };
-
-// Open email modal
-function openEmailModal(type, id, name) {
-    currentEmailTarget = { type, id, name };
-    
-    const title = type === 'key' ? `Send Key: ${name}` : `Send Certificate: ${name}`;
-    document.getElementById('emailModalTitle').textContent = title;
-    document.getElementById('emailRecipient').value = '';
-    document.getElementById('emailMessage').value = '';
-    document.getElementById('emailIncludePrivate').checked = false;
-    document.getElementById('emailModal').style.display = 'flex';
-}
-
-// Close email modal
-function closeEmailModal() {
-    document.getElementById('emailModal').style.display = 'none';
-    currentEmailTarget = { type: null, id: null, name: null };
-}
-
-// Send email
-async function handleSendEmail(event) {
-    event.preventDefault();
-    
-    const recipient = document.getElementById('emailRecipient').value;
-    const message = document.getElementById('emailMessage').value;
-    const includePrivate = document.getElementById('emailIncludePrivate').checked;
-    const button = event.target.querySelector('button[type="submit"]');
-    
-    if (!currentEmailTarget.type || !currentEmailTarget.id) {
-        alert('❌ No item selected');
-        return;
-    }
-    
-    setLoading(button, true);
-    
-    try {
-        const endpoint = currentEmailTarget.type === 'key' 
-            ? `/keyvault/keys/${currentEmailTarget.id}/send-email`
-            : `/keyvault/certificates/${currentEmailTarget.id}/send-email`;
-        
-        const body = {
-            recipient_email: recipient,
-            include_private_key: includePrivate,
-            message: message || null
-        };
-        
-        const response = await apiRequest(endpoint, {
-            method: 'POST',
-            body: JSON.stringify(body)
-        });
-        
-        if (response.success) {
-            alert(`✅ ${currentEmailTarget.type === 'key' ? 'Key' : 'Certificate'} sent to ${recipient}!`);
-            closeEmailModal();
-        }
-    } catch (error) {
-        alert('❌ Failed to send email: ' + error.message);
-    } finally {
-        setLoading(button, false);
-    }
-}
-
 // Close key modal
 function closeKeyModal() {
     document.getElementById('keyModal').style.display = 'none';
@@ -599,13 +530,9 @@ function closeKeyModal() {
 // Close modals on outside click
 window.onclick = function(event) {
     const keyModal = document.getElementById('keyModal');
-    const emailModal = document.getElementById('emailModal');
     
     if (event.target === keyModal) {
         closeKeyModal();
-    }
-    if (event.target === emailModal) {
-        closeEmailModal();
     }
 }
 
@@ -621,6 +548,3 @@ window.downloadKey = downloadKey;
 window.validateCertificate = validateCertificate;
 window.viewCertificate = viewCertificate;
 window.downloadCertificate = downloadCertificate;
-window.openEmailModal = openEmailModal;
-window.closeEmailModal = closeEmailModal;
-window.handleSendEmail = handleSendEmail;

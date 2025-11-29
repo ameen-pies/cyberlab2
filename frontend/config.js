@@ -17,8 +17,10 @@ const API_CONFIG = {
         DECRYPT_REST: '/simulations/decrypt/at-rest',
         LIFECYCLE: '/simulations/encrypt/lifecycle',
         ENCRYPT_FILE_TRANSIT: '/simulations/encrypt/file/in-transit',
+        DECRYPT_FILE_TRANSIT: '/simulations/decrypt/file/in-transit',  // ✅ Added missing endpoint
         ENCRYPT_FILE_REST: '/simulations/encrypt/file/at-rest',
-        ENCRYPT_FILE_LIFECYCLE: '/simulations/encrypt/file/lifecycle',
+        DECRYPT_FILE_REST: '/simulations/decrypt/file/at-rest',  // ✅ Added missing endpoint
+        FILE_LIFECYCLE: '/simulations/encrypt/file/lifecycle',  // ✅ Fixed endpoint name
         
         // KeyVault endpoints
         KEYVAULT_GENERATE_KEY: '/keyvault/keys/generate',
@@ -104,9 +106,13 @@ async function apiRequest(endpoint, options = {}) {
     const url = `${API_CONFIG.BASE_URL}${endpoint}`;
     const token = Storage.getToken();
     
-    const defaultHeaders = {
-        'Content-Type': 'application/json',
-    };
+    const defaultHeaders = {};
+    
+    // ✅ Only set Content-Type for non-FormData requests
+    // When sending FormData, browser automatically sets Content-Type with boundary
+    if (!(options.body instanceof FormData)) {
+        defaultHeaders['Content-Type'] = 'application/json';
+    }
     
     if (token && !options.skipAuth) {
         defaultHeaders['Authorization'] = `Bearer ${token}`;
@@ -124,12 +130,15 @@ async function apiRequest(endpoint, options = {}) {
         const data = await response.json();
         
         if (!response.ok) {
-            throw new Error(data.detail || 'Request failed');
+            // ✅ Better error handling - extract the error message properly
+            const errorMessage = data.detail || data.error || data.message || 'Request failed';
+            throw new Error(errorMessage);
         }
         
         return data;
     } catch (error) {
         console.error('API Request Error:', error);
+        // ✅ Re-throw with proper error message
         throw error;
     }
 }

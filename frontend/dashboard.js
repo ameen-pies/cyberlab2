@@ -229,20 +229,28 @@ function showSection(sectionName) {
 
 // Switch encryption tabs
 function switchEncryptionTab(tabName) {
-    document.querySelectorAll('.tab-content').forEach(tab => {
+    // Hide all main tab contents
+    document.querySelectorAll('#encryptionSection > .tab-content').forEach(tab => {
         tab.classList.remove('active');
     });
     
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
+    // Remove active from main tab buttons only (first set)
+    const mainTabContainer = document.querySelector('#encryptionSection > .encryption-tabs');
+    if (mainTabContainer) {
+        mainTabContainer.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+    }
     
+    // Show selected main tab
     document.getElementById(`${tabName}Tab`).classList.add('active');
     
+    // Set active button
     if (event && event.target) {
         event.target.classList.add('active');
     }
 }
+
 
 // Handle logout
 function handleLogout() {
@@ -829,6 +837,390 @@ function displayFileLifecycleResult(containerId, response) {
     
     container.innerHTML = html;
 }
+// Add these functions to the bottom of your dashboard.js file
+function switchInTransitSubTab(tabName) {
+    // Remove active from all sub-tab contents
+    document.querySelectorAll('#inTransitTab .sub-tab-content').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    // Remove active from sub-tab buttons only (second set of tabs)
+    const subTabContainer = document.querySelectorAll('#inTransitTab .encryption-tabs')[0];
+    if (subTabContainer) {
+        subTabContainer.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+    }
+    
+    // Properly capitalize: encryptText -> EncryptText, decryptFile -> DecryptFile
+    const capitalizedTabName = tabName.charAt(0).toUpperCase() + tabName.slice(1);
+    const targetTab = document.getElementById(`inTransit${capitalizedTabName}Tab`);
+    
+    if (targetTab) {
+        targetTab.classList.add('active');
+    } else {
+        console.error('Target tab not found:', `inTransit${capitalizedTabName}Tab`);
+    }
+    
+    // Set active button
+    if (typeof event !== 'undefined' && event && event.target) {
+        event.target.classList.add('active');
+    }
+}
+function switchAtRestSubTab(tabName) {
+    // Remove active from all sub-tab contents
+    document.querySelectorAll('#atRestTab .sub-tab-content').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    // Remove active from sub-tab buttons only
+    const subTabContainer = document.querySelectorAll('#atRestTab .encryption-tabs')[0];
+    if (subTabContainer) {
+        subTabContainer.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+    }
+    
+    // Capitalize first letter of tabName
+    const capitalizedTabName = tabName.charAt(0).toUpperCase() + tabName.slice(1);
+    const targetTab = document.getElementById(`atRest${capitalizedTabName}Tab`);
+    
+    if (targetTab) {
+        targetTab.classList.add('active');
+    }
+    
+    // Set active button
+    if (event && event.target) {
+        event.target.classList.add('active');
+    }
+}
+function switchLifecycleSubTab(tabName) {
+    // Remove active from all sub-tab contents
+    document.querySelectorAll('#lifecycleTab .sub-tab-content').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    // Remove active from sub-tab buttons only
+    const subTabContainer = document.querySelectorAll('#lifecycleTab .encryption-tabs')[0];
+    if (subTabContainer) {
+        subTabContainer.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+    }
+    
+    // Capitalize first letter of tabName
+    const capitalizedTabName = tabName.charAt(0).toUpperCase() + tabName.slice(1);
+    const targetTab = document.getElementById(`lifecycle${capitalizedTabName}Tab`);
+    
+    if (targetTab) {
+        targetTab.classList.add('active');
+    }
+    
+    // Set active button
+    if (event && event.target) {
+        event.target.classList.add('active');
+    }
+}
+
+// ============= FIXED FILE DOWNLOAD AND DISPLAY FUNCTIONS =============
+
+function displayFileEncryptionResult(containerId, response) {
+    const container = document.getElementById(containerId);
+    container.style.display = 'block';
+    
+    let html = '<h4>✅ File Encryption Successful</h4>';
+    
+    // Create download button for encrypted data (response.encrypted_data exists)
+    if (response.encrypted_data) {
+        const encFilename = (response.original_filename || 'encrypted_file') + '.enc';
+        const buttonId = 'downloadBtn_' + containerId;
+        
+        html += `
+            <div class="result-item">
+                <label>📥 Download Encrypted File:</label>
+                <button id="${buttonId}" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 16px;">
+                    📥 Download ${encFilename}
+                </button>
+                <small style="color: #6b7280; display: block; margin-top: 8px;">
+                    Click the button above to download the encrypted file
+                </small>
+            </div>
+        `;
+    }
+    
+    // Display encryption key if present (at-rest encryption)
+    if (response.key) {
+        const keyId = 'encKey_' + containerId;
+        html += `
+            <div class="result-item">
+                <label>🔑 Encryption Key (SAVE THIS!):</label>
+                <input type="text" id="${keyId}" readonly value="${response.key}" style="width: 100%; font-family: monospace; font-size: 12px; padding: 10px; margin-bottom: 8px; box-sizing: border-box;">
+                <button id="copyBtn_${keyId}" class="btn" style="background: #10b981; color: white; padding: 10px 16px; width: 100%; font-size: 14px;">
+                    📋 Copy Key
+                </button>
+                <div style="background: #fee2e2; padding: 12px; border-radius: 6px; border-left: 4px solid #dc2626; margin-top: 12px;">
+                    <strong style="color: #dc2626;">⚠️ CRITICAL:</strong>
+                    <p style="color: #991b1b; margin: 8px 0 0 0; font-size: 14px;">
+                        You MUST save this key! Without it, you cannot decrypt your file. Copy it now and store it safely.
+                    </p>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Display salt if present (in-transit encryption)
+    if (response.salt) {
+        const saltId = 'encSalt_' + containerId;
+        html += `
+            <div class="result-item">
+                <label>🧂 Salt (SAVE THIS!):</label>
+                <input type="text" id="${saltId}" readonly value="${response.salt}" style="width: 100%; font-family: monospace; font-size: 12px; padding: 10px; margin-bottom: 8px; box-sizing: border-box;">
+                <button id="copyBtn_${saltId}" class="btn" style="background: #10b981; color: white; padding: 10px 16px; width: 100%; font-size: 14px;">
+                    📋 Copy Salt
+                </button>
+                <div style="background: #fee2e2; padding: 12px; border-radius: 6px; border-left: 4px solid #dc2626; margin-top: 12px;">
+                    <strong style="color: #dc2626;">⚠️ CRITICAL:</strong>
+                    <p style="color: #991b1b; margin: 8px 0 0 0; font-size: 14px;">
+                        You MUST save this salt along with your password! Without it, you cannot decrypt your file.
+                    </p>
+                </div>
+            </div>
+        `;
+    }
+    
+    // File size info
+    if (response.file_size) {
+        html += `<div class="alert alert-info" style="margin-top: 16px;">📊 Original Size: ${formatBytes(response.file_size)}</div>`;
+    }
+    
+    if (response.encrypted_size) {
+        html += `<div class="alert alert-info">📊 Encrypted Size: ${formatBytes(response.encrypted_size)}</div>`;
+    }
+    
+    if (response.method) {
+        html += `<div class="alert alert-info">🔐 Method: ${response.method}</div>`;
+    }
+    
+    container.innerHTML = html;
+    
+    // Attach event listeners after DOM update
+    setTimeout(() => {
+        // Download button for encrypted file
+        if (response.encrypted_data) {
+            const encFilename = (response.original_filename || 'encrypted_file') + '.enc';
+            const downloadBtn = document.getElementById('downloadBtn_' + containerId);
+            if (downloadBtn) {
+                downloadBtn.addEventListener('click', function() {
+                    downloadEncryptedFile(response.encrypted_data, encFilename);
+                });
+            }
+        }
+        
+        // Copy button for key
+        if (response.key) {
+            const keyId = 'encKey_' + containerId;
+            const copyKeyBtn = document.getElementById('copyBtn_' + keyId);
+            if (copyKeyBtn) {
+                copyKeyBtn.addEventListener('click', function() {
+                    copyToClipboard(keyId, this);
+                });
+            }
+        }
+        
+        // Copy button for salt
+        if (response.salt) {
+            const saltId = 'encSalt_' + containerId;
+            const copySaltBtn = document.getElementById('copyBtn_' + saltId);
+            if (copySaltBtn) {
+                copySaltBtn.addEventListener('click', function() {
+                    copyToClipboard(saltId, this);
+                });
+            }
+        }
+    }, 100);
+}
+
+function displayFileDecryptionResult(containerId, response) {
+    const container = document.getElementById(containerId);
+    container.style.display = 'block';
+    
+    let html = '<h4>✅ File Decryption Successful</h4>';
+    
+    // Download button for decrypted file
+    if (response.decrypted_data) {
+        const decFilename = response.original_filename || 'decrypted_file';
+        const buttonId = 'downloadDecBtn_' + containerId;
+        
+        html += `
+            <div class="result-item">
+                <label>📥 Download Decrypted File:</label>
+                <button id="${buttonId}" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 16px; background: #10b981;">
+                    📥 Download ${decFilename}
+                </button>
+                <small style="color: #6b7280; display: block; margin-top: 8px;">
+                    Your file has been successfully decrypted! Click above to download.
+                </small>
+            </div>
+        `;
+    }
+    
+    if (response.file_size) {
+        html += `<div class="alert alert-info" style="margin-top: 16px;">📊 File Size: ${formatBytes(response.file_size)}</div>`;
+    }
+    
+    if (response.method) {
+        html += `<div class="alert alert-info">🔓 Method: ${response.method}</div>`;
+    }
+    
+    container.innerHTML = html;
+    
+    // Attach event listener to download button
+    if (response.decrypted_data) {
+        setTimeout(() => {
+            const decFilename = response.original_filename || 'decrypted_file';
+            const downloadBtn = document.getElementById('downloadDecBtn_' + containerId);
+            if (downloadBtn) {
+                downloadBtn.addEventListener('click', function() {
+                    downloadDecryptedFile(response.decrypted_data, decFilename);
+                });
+            }
+        }, 100);
+    }
+}
+
+// Helper function to download encrypted file (saves as plain text .enc file)
+function downloadEncryptedFile(encryptedData, filename) {
+    try {
+        console.log('📥 Downloading encrypted file:', filename);
+        console.log('📊 Data length:', encryptedData.length);
+        
+        // The encrypted_data is base64 text, save it as a text file
+        const blob = new Blob([encryptedData], { type: 'text/plain' });
+        
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        
+        // Cleanup
+        setTimeout(() => {
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        }, 100);
+        
+        console.log('✅ File download initiated:', filename);
+    } catch (error) {
+        console.error('❌ Download error:', error);
+        alert('❌ Failed to download file: ' + error.message);
+    }
+}
+
+// Helper function to download decrypted file (converts base64 back to binary)
+function downloadDecryptedFile(base64Data, filename) {
+    try {
+        console.log('📥 Downloading decrypted file:', filename);
+        console.log('📊 Base64 data length:', base64Data.length);
+        
+        // Convert base64 to binary
+        const byteCharacters = atob(base64Data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'application/octet-stream' });
+        
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        
+        // Cleanup
+        setTimeout(() => {
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        }, 100);
+        
+        console.log('✅ File download initiated:', filename);
+    } catch (error) {
+        console.error('❌ Download error:', error);
+        alert('❌ Failed to download file: ' + error.message);
+    }
+}
+
+// Helper function to copy text to clipboard
+function copyToClipboard(elementId, buttonElement) {
+    const element = document.getElementById(elementId);
+    if (!element) {
+        console.error('Element not found:', elementId);
+        return;
+    }
+    
+    // Select the text
+    element.select();
+    element.setSelectionRange(0, 99999); // For mobile devices
+    
+    try {
+        // Try modern clipboard API first
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(element.value).then(() => {
+                showCopySuccess(buttonElement);
+            }).catch(() => {
+                // Fallback to execCommand
+                fallbackCopy(element, buttonElement);
+            });
+        } else {
+            // Fallback for older browsers
+            fallbackCopy(element, buttonElement);
+        }
+    } catch (err) {
+        console.error('Copy failed:', err);
+        alert('Failed to copy. Please select and copy manually.');
+    }
+}
+
+function fallbackCopy(element, buttonElement) {
+    const successful = document.execCommand('copy');
+    if (successful) {
+        showCopySuccess(buttonElement);
+    } else {
+        alert('Failed to copy. Please select and copy manually.');
+    }
+}
+
+function showCopySuccess(buttonElement) {
+    if (buttonElement) {
+        const originalHTML = buttonElement.innerHTML;
+        const originalBg = buttonElement.style.background;
+        
+        buttonElement.innerHTML = '✅ Copied!';
+        buttonElement.style.background = '#059669';
+        
+        setTimeout(() => {
+            buttonElement.innerHTML = originalHTML;
+            buttonElement.style.background = originalBg;
+        }, 2000);
+    }
+}
+
+// Helper function to format bytes
+function formatBytes(bytes, decimals = 2) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+window.switchInTransitSubTab = switchInTransitSubTab;
+window.switchAtRestSubTab = switchAtRestSubTab;
+window.switchLifecycleSubTab = switchLifecycleSubTab;
 
 // Make functions globally available
 window.showSection = showSection;

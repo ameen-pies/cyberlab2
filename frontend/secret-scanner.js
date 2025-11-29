@@ -151,11 +151,48 @@ function readFileAsText(file) {
     });
 }
 
+// Helper function to check if a match is within a MongoDB URI
+function isInMongoURI(line, matchIndex) {
+    // Check for MongoDB connection string patterns
+    const mongoPatterns = [
+        /mongodb(\+srv)?:\/\//i,
+        /mongoose\.connect/i,
+        /MongoClient\.connect/i
+    ];
+    
+    return mongoPatterns.some(pattern => pattern.test(line));
+}
+
+// Helper function to check if email is likely a real email vs connection string
+function isLikelyRealEmail(email, line) {
+    // Exclude if in connection strings
+    if (line.includes('mongodb') || line.includes('://') || line.includes('cluster')) {
+        return false;
+    }
+    
+    // Exclude if surrounded by connection string indicators
+    if (line.match(/[:\/][\w.-]*@[\w.-]+/)) {
+        return false;
+    }
+    
+    // Check for common real email patterns
+    const realEmailIndicators = [
+        /email\s*[:=]/i,
+        /mailto:/i,
+        /from\s*[:=]/i,
+        /to\s*[:=]/i,
+        /recipient/i,
+        /@(gmail|yahoo|outlook|hotmail|icloud)\./i
+    ];
+    
+    return realEmailIndicators.some(pattern => pattern.test(line));
+}
+
 // Generate mock scan response based on content
 function generateMockScanResponse(content) {
     const findings = [];
     
-    // Check for common secret patterns - ALL patterns now have 'g' flag for matchAll
+    // Improved patterns with better specificity
     const patterns = [
         {
             name: "AWS Access Key",
@@ -164,37 +201,62 @@ function generateMockScanResponse(content) {
         },
         {
             name: "AWS Secret Key",
-            regex: /[A-Za-z0-9/+=]{40}/g,
+            regex: /(?:aws_secret_access_key|AWS_SECRET_ACCESS_KEY)[\s]*=[\s]*['"]?([A-Za-z0-9/+=]{40})['"]?/g,
             severity: "critical"
         },
         {
-            name: "API Key",
-            regex: /(api[_-]?key|apikey)[\s]*=[\s]*['"]([^'"]+)['"]/gi,
+            name: "GitHub Token",
+            regex: /gh[pousr]_[A-Za-z0-9]{36,}/g,
+            severity: "critical"
+        },
+        {
+            name: "Generic API Key",
+            regex: /\b(api[_-]?key|apikey|api_token)[\s]*[:=][\s]*['"]([A-Za-z0-9_\-]{20,})['"]?/gi,
             severity: "high"
         },
         {
-            name: "Password in code",
-            regex: /(password|pwd|pass)[\s]*=[\s]*['"]([^'"]+)['"]/gi,
+            name: "MongoDB Connection String",
+            regex: /mongodb(\+srv)?:\/\/[^\s'"]+/g,
+            severity: "critical"
+        },
+        {
+            name: "Database Password",
+            regex: /(?:db_password|database_password|DB_PASSWORD)[\s]*[:=][\s]*['"]([^'"]+)['"]/gi,
+            severity: "critical"
+        },
+        {
+            name: "Generic Password",
+            regex: /(?:password|pwd|pass)[\s]*[:=][\s]*['"]([^'"\s]{6,})['"]/gi,
             severity: "high"
         },
         {
             name: "Private Key",
-            regex: /-----BEGIN (RSA|DSA|EC|OPENSSH) PRIVATE KEY-----/g,
+            regex: /-----BEGIN (RSA|DSA|EC|OPENSSH|PRIVATE) PRIVATE KEY-----/g,
             severity: "critical"
         },
         {
             name: "JWT Token",
-            regex: /eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9._-]*/g,
+            regex: /eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9._-]{10,}/g,
             severity: "medium"
         },
         {
-            name: "Email Address",
-            regex: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g,
-            severity: "low"
+            name: "Slack Token",
+            regex: /xox[baprs]-[0-9]{10,13}-[0-9]{10,13}-[A-Za-z0-9]{24,}/g,
+            severity: "high"
         },
         {
-            name: "IP Address",
-            regex: /\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b/g,
+            name: "Google API Key",
+            regex: /AIza[0-9A-Za-z_-]{35}/g,
+            severity: "critical"
+        },
+        {
+            name: "Stripe API Key",
+            regex: /(?:sk|pk)_(test|live)_[0-9a-zA-Z]{24,}/g,
+            severity: "critical"
+        },
+        {
+            name: "Private IP Address",
+            regex: /\b(?:10\.|172\.(?:1[6-9]|2[0-9]|3[01])\.|192\.168\.)\d{1,3}\.\d{1,3}\b/g,
             severity: "low"
         }
     ];
@@ -206,6 +268,14 @@ function generateMockScanResponse(content) {
             try {
                 const matches = [...line.matchAll(pattern.regex)];
                 matches.forEach(match => {
+                    // Skip certain patterns if they're in comments or documentation
+                    if (line.trim().startsWith('//') || line.trim().startsWith('#') || line.trim().startsWith('*')) {
+                        // Only skip low severity findings in comments
+                        if (pattern.severity === 'low') {
+                            return;
+                        }
+                    }
+                    
                     findings.push({
                         name: pattern.name,
                         value: match[0].substring(0, 50) + (match[0].length > 50 ? '...' : ''),
@@ -215,11 +285,31 @@ function generateMockScanResponse(content) {
                             start: match.index + 1,
                             end: match.index + match[0].length + 1
                         },
-                        entropy: Math.random() * 8 + 2 // Random entropy between 2-10
+                        entropy: calculateEntropy(match[0])
                     });
                 });
             } catch (error) {
                 console.warn(`Error processing pattern ${pattern.name}:`, error);
+            }
+        });
+        
+        // Special handling for email addresses - only flag if likely real emails
+        const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
+        const emailMatches = [...line.matchAll(emailRegex)];
+        emailMatches.forEach(match => {
+            // Only add if it's likely a real email (not in connection strings)
+            if (isLikelyRealEmail(match[0], line)) {
+                findings.push({
+                    name: "Email Address (PII)",
+                    value: match[0],
+                    severity: "low",
+                    line: index + 1,
+                    position: {
+                        start: match.index + 1,
+                        end: match.index + match[0].length + 1
+                    },
+                    entropy: calculateEntropy(match[0])
+                });
             }
         });
     });
@@ -256,6 +346,25 @@ ${findings.map(f => `[${f.severity.toUpperCase()}] ${f.name} at line ${f.line}: 
         findings: findings,
         report: report
     };
+}
+
+// Calculate Shannon entropy for randomness detection
+function calculateEntropy(str) {
+    const len = str.length;
+    const frequencies = {};
+    
+    for (let i = 0; i < len; i++) {
+        const char = str[i];
+        frequencies[char] = (frequencies[char] || 0) + 1;
+    }
+    
+    let entropy = 0;
+    for (const char in frequencies) {
+        const p = frequencies[char] / len;
+        entropy -= p * Math.log2(p);
+    }
+    
+    return entropy;
 }
 
 // Display scan results
@@ -336,8 +445,16 @@ function displayScanResults(data, containerId) {
                 'low': '🟢'
             };
             
+            const severityRecommendations = {
+                'critical': 'Rotate immediately and investigate potential exposure',
+                'high': 'Rotate as soon as possible and review access logs',
+                'medium': 'Consider rotating and improving secret management',
+                'low': 'Review if this information should be exposed'
+            };
+            
             const color = severityColors[finding.severity] || '#6b7280';
             const icon = severityIcons[finding.severity] || '⚪';
+            const recommendation = severityRecommendations[finding.severity] || 'Review this finding';
             
             html += `
                 <div style="border: 2px solid ${color}; padding: 16px; border-radius: 8px; background: white;">
@@ -362,7 +479,7 @@ function displayScanResults(data, containerId) {
                     </div>
                     <div style="margin-top: 12px; padding: 12px; background: #fef3c7; border-radius: 4px;">
                         <div style="color: #92400e; font-size: 13px;">
-                            <strong>⚠️ Action Required:</strong> Rotate this ${finding.name} immediately and never commit secrets to code.
+                            <strong>⚠️ Action Required:</strong> ${recommendation}
                         </div>
                     </div>
                 </div>
